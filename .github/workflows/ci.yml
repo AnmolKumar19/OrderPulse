@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Run correctness / concurrency / feed-simulator suite
+        run: ./build/tests/orderpulse_tests --reporter console
+
+      - name: Smoke-run the benchmark (small event count, CI runners are not
+          representative hardware for the real latency numbers -- see README)
+        run: ./build/bench/orderpulse_bench 50000 2000
+
+      - name: Smoke-test the web demo server
+        run: |
+          ./build/web/server/orderpulse_server &
+          SERVER_PID=$!
+          sleep 1
+          curl -sf http://localhost:8080/api/health
+          curl -sf -X POST http://localhost:8080/api/orders \
+            -H 'Content-Type: application/json' \
+            -d '{"side":"bid","type":"limit","price":10000,"qty":10}'
+          curl -sfo /dev/null http://localhost:8080/index.html
+          kill $SERVER_PID

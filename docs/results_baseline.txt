@@ -1,0 +1,25 @@
+OrderPulse baseline benchmark (std::map-based price levels)
+Run: 2026-09-04T14:34:39Z
+Host: Linux Harsh 5.15.167.4-microsoft-standard-WSL2 #1 SMP Tue Nov 5 00:21:55 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux
+Compiler: g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
+
+OrderPulse latency benchmark
+  events: 2000000 (warmup: 20000 excluded from stats)
+  invariant TSC (constant_tsc): yes
+  TSC calibration: 2.7228 cycles/ns
+  hardware_concurrency: 12
+
+Results:
+  processing latency           p50=    63.9  p90=   168.6  p99=   348.5  p99.9=    731.2  p99.99=  10311.4  max=  147515.3  mean=    92.2  (ns, n=1980000)
+    - Add                      p50=    61.3  p90=   107.2  p99=   323.2  p99.9=    813.1  p99.99=   9228.0  max=  114267.9  mean=    77.1  (ns, n=1070248)
+    - Cancel                   p50=   124.5  p90=   178.1  p99=   356.6  p99.9=    599.7  p99.99=  11596.1  max=  147515.3  mean=   108.7  (ns, n=790833)
+    - Modify                   p50=   129.6  p90=   184.4  p99=   418.0  p99.9=    743.7  p99.99=  12602.5  max=   42847.0  mean=   116.1  (ns, n=118919)
+  end-to-end (feed->processed) p50=10852768.7  p90=13667216.3  p99=81423674.9  p99.9=83181979.1  p99.99=83211561.4  max=83213191.4  mean=12496150.8  (ns, n=1980000)
+  note: the producer is unthrottled (pushes as fast as it can generate
+  events) to stress-test sustained peak throughput, so this run saturates
+  the queue -- end-to-end latency is dominated by queue backlog
+  (~queue_capacity x processing time), not per-event handoff cost. See
+  README.md "Benchmark methodology" for the arithmetic. "processing
+  latency" above is the matching-engine-isolated number.
+
+Book sanity: trades=961376  resting-orders=17862  invariant=OK

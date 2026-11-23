@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderPulse — Live Order Book</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>OrderPulse</h1>
+      <span class="tagline">Live limit order book &mdash; real C++ matching engine, no reimplementation in JS</span>
+    </div>
+    <div class="actions">
+      <button id="simulateBtn" class="btn">Simulate 200 events</button>
+      <button id="resetBtn" class="btn btn-danger">Reset</button>
+    </div>
+  </header>
+
+  <div class="touch-bar">
+    <div class="touch best-bid">
+      <span class="touch-label">Best Bid</span>
+      <span id="bestBid" class="touch-value">&mdash;</span>
+    </div>
+    <div class="touch spread">
+      <span class="touch-label">Spread</span>
+      <span id="spread" class="touch-value">&mdash;</span>
+    </div>
+    <div class="touch best-ask">
+      <span class="touch-label">Best Ask</span>
+      <span id="bestAsk" class="touch-value">&mdash;</span>
+    </div>
+  </div>
+
+  <main>
+    <section class="panel order-entry">
+      <h2>New Order</h2>
+      <form id="orderForm">
+        <div class="row">
+          <label class="toggle">
+            <input type="radio" name="side" value="bid" checked>
+            <span class="toggle-btn side-bid">Buy</span>
+          </label>
+          <label class="toggle">
+            <input type="radio" name="side" value="ask">
+            <span class="toggle-btn side-ask">Sell</span>
+          </label>
+        </div>
+        <div class="row">
+          <label class="toggle">
+            <input type="radio" name="type" value="limit" checked>
+            <span class="toggle-btn">Limit</span>
+          </label>
+          <label class="toggle">
+            <input type="radio" name="type" value="market">
+            <span class="toggle-btn">Market</span>
+          </label>
+        </div>
+        <label class="field">
+          <span>Price (cents)</span>
+          <input type="number" id="priceInput" value="10000" min="1" max="100000" step="1">
+        </label>
+        <label class="field">
+          <span>Quantity</span>
+          <input type="number" id="qtyInput" value="10" min="1" step="1">
+        </label>
+        <button type="submit" class="btn btn-submit">Submit Order</button>
+        <div id="orderError" class="error"></div>
+      </form>
+
+      <h2 class="orders-heading">Your Resting Orders</h2>
+      <div id="ordersList" class="orders-list">
+        <div class="empty-note">No resting orders yet.</div>
+      </div>
+    </section>
+
+    <section class="panel ladder">
+      <h2>Order Book</h2>
+      <div class="ladder-grid">
+        <div class="ladder-col asks">
+          <div class="ladder-header"><span>Price</span><span>Qty</span><span>#</span></div>
+          <div id="asksList" class="ladder-rows"></div>
+        </div>
+        <div class="ladder-col bids">
+          <div class="ladder-header"><span>Price</span><span>Qty</span><span>#</span></div>
+          <div id="bidsList" class="ladder-rows"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel tape">
+      <h2>Trade Tape</h2>
+      <div id="tradeTape" class="tape-rows">
+        <div class="empty-note">No trades yet.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Prices are in cents (10000 = $100.00). Backed by the same <code>OrderBook</code>/<code>PriceLadder</code> C++ code as the correctness tests and latency benchmark &mdash; </span>
+    <a href="https://github.com/HxrshRaj/OrderPulse" target="_blank" rel="noopener">source on GitHub</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

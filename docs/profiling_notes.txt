@@ -1,0 +1,65 @@
+OrderPulse profiling notes (raw `perf.data` files are not committed -- tens
+of MB each and not useful without the exact binary/symbols that produced
+them; these are the relevant excerpts extracted from real perf record/
+report runs on this machine during development).
+
+Environment: WSL2 (Ubuntu 24.04, kernel 5.15.167.4-microsoft-standard-WSL2)
+on Windows. `perf stat -e cycles,instructions` reports `<not supported>`
+in this environment -- the Hyper-V VM does not expose hardware PMU
+counters to the guest. Software-event sampling (`-e task-clock`, the perf
+default) works and gives real symbolized call-graph attribution via
+`perf record -g --call-graph dwarf`, which is what the numbers below come
+from. This means: function-level and self/children time attribution is
+real and usable; hardware-level metrics (IPC, cache-miss counts, branch
+mispredictions) were not obtainable here. Where the README states a
+cache-miss explanation for a result, it is stated as a hypothesis
+consistent with the access pattern, not a directly measured fact.
+
+=====================================================================
+BASELINE (std::map<Price, PriceLevel>), before fixing the benchmark's
+own trades.clear() bug, `perf record -F 4000 -g --call-graph dwarf`,
+2,000,000 events:
+
+Flat profile, top non-setup entries (Children / Self):
+    43.30%    15.22%  main::{lambda()#2}::operator()() const      <- consumer's per-event dispatch
+    36.87%    10.23%  main::{lambda()#1}::operator()() const      <- producer's per-event generation
+    19.29%     9.99%  orderpulse::FeedSimulator::next()
+     8.30%     8.28%  orderpulse::OrderBook::cancelOrder(unsigned long)
+    ~11%       ~0%    exc_page_fault / handle_mm_fault / clear_page_erms  (mostly one-time
+                       setup: OrderPool's 2M-Order vector construction, ~80MB zeroed)
+
+Call graph under addOrder -> rest():
+    2.27%  orderpulse::OrderBook::rest(orderpulse::Order*)
+      1.06%  std::map<...,std::greater<long>,...>::operator[](long const&) (inlined)
+        0.67%    ...::lower_bound(long const&) (inlined) -> _Rb_tree::_M_lower_bound (inlined)
+      0.87%  std::map<...,std::less<long>,...>::operator[](long const&) (inlined)
+        0.63%    ...::lower_bound(long const&) (inlined) -> _Rb_tree::_M_lower_bound (inlined)
+
+cancelOrder shows 8.28% "self" time (not "children") -- almost none of its
+cost is attributed to a separate visible callee frame, consistent with
+the map's find()/erase() being small enough to inline directly into
+cancelOrder: the RB-tree traversal and (on level teardown) node
+deallocation are being paid for as if hand-written inline into the
+function, not as a separate, cheap call.
+
+=====================================================================
+OPTIMIZED (PriceLadder), same benchmark, same event count:
+
+     9.73%     9.66%  orderpulse::OrderBook::cancelOrder(unsigned long)
+     3.72%     3.61%  orderpulse::OrderBook::matchAgainst(orderpulse::PriceLadder&, ...)
+     1.31%     1.26%  orderpulse::OrderBook::modifyOrder(...)
+
+cancelOrder's self-time SHARE did not drop in this flat profile -- see
+README.md "Profiling & optimization" for why a single isolated perf run's
+percentages were not trusted here (run-to-run total profiled time varied
+25%+ between two separate `perf record` invocations of otherwise-identical
+binaries, consistent with the same WSL2/Hyper-V scheduling jitter visible
+in the benchmark's own p99.99/max tail). The trustworthy comparison is the
+interleaved, same-harness A/B timing benchmark (docs/ab_comparison.txt),
+which isolates Add/Cancel/Modify separately using the same low-overhead
+rdtscp technique as the main benchmark rather than statistical sampling:
+Add improved ~22% (mean), Cancel and Modify only ~5-6% (near run-to-run
+noise). That split is the real finding -- not "the optimization didn't
+work," but "the optimization fixed the allocation-bound path (Add,
+creating new price levels) and left the already memory-latency-bound path
+(Cancel) largely unchanged."

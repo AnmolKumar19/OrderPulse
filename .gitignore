@@ -1,0 +1,7 @@
+build/
+*.o
+*.obj
+compile_commands.json
+build_configure.log
+build_compile.log
+perf.data*
