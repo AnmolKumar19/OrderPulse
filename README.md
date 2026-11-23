@@ -458,3 +458,4 @@ perf report -i perf.data --stdio
   [Profiling & optimization](#profiling--optimization) is inferred, not
   measured** — this environment couldn't get hardware cache-miss counts to
   confirm it directly.
+"# OrderPulse" 
