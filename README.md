@@ -11,6 +11,8 @@ prove it, before and after.
 Nothing in this repo is estimated or hardcoded. Every latency number below
 came out of an actual benchmark run on the machine this was built on
 (commands to reproduce are in [Reproducing the results](#reproducing-the-results)).
+**Live Web Demo:** [https://orderpulse-bcez.onrender.com](https://orderpulse-bcez.onrender.com)  
+*(Hosted on Render's free tier — the first request after inactivity may take ~50 seconds to wake the container.)*
 
 ## Contents
 
